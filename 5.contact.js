@@ -29,8 +29,16 @@ rl.question('Nama: ', (name) => {
 
       // Membaca data kontak yang sudah ada di file atau memulai dengan array kosong
       var contacts = []; // Inisialisasi array kosong
+      if (fs.existsSync('data/contacts.json')) {// Periksa apakah file contacts.json ada
         const fileContent = fs.readFileSync('data/contacts.json', 'utf-8'); // Baca isi file
         contacts = JSON.parse(fileContent); // Ubah string JSON menjadi array
+      }else{
+        // Mebuat file baru apabila file contacts.json tidak di temukan
+        fs.writeFileSync('data/contacts.json', JSON.stringify(contacts, null, 2), 'utf-8')
+        const fileContent = fs.readFileSync('data/contacts.json', 'utf-8'); // Baca isi file
+        contacts = JSON.parse(fileContent); // Ubah string JSON menjadi array
+      }
+        
 
       // Menambahkan kontak baru ke daftar kontak yang sudah ada
       contacts.push(newContact);
