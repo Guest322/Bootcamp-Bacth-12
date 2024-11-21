@@ -34,9 +34,7 @@ rl.question('Nama: ', (name) => {
         contacts = JSON.parse(fileContent); // Ubah string JSON menjadi array
       }else{
         // Mebuat file baru apabila file contacts.json tidak di temukan
-        fs.writeFileSync('data/contacts.json', JSON.stringify(contacts, null, 2), 'utf-8')
-        const fileContent = fs.readFileSync('data/contacts.json', 'utf-8'); // Baca isi file
-        contacts = JSON.parse(fileContent); // Ubah string JSON menjadi array
+        fs.writeFileSync('data/contacts.json', JSON.stringify(contacts, null, 2), 'utf-8');
       }
         
 
