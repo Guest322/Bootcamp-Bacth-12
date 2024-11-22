@@ -1,6 +1,9 @@
 const readline = require('node:readline'); // Mengimpor modul readline untuk menerima input dari terminal
 const validator = require('validator');   // Mengimpor modul validator untuk memvalidasi data
 const fs = require('fs');                 // Mengimpor modul fs untuk bekerja dengan file
+dirFolder = "./data";
+dirFile = "/data/contacts.js";
+
 
 // Membuat antarmuka readline untuk membaca input dan menulis output dari/ke terminal
 const rl = readline.createInterface({
