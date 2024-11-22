@@ -37,5 +37,22 @@ function newContact(contact) {
     fs.writeFileSync("data/contacts.json", JSON.stringify(contacts, null, 2), 'utf-8');
 }
 
+function deleteContact(argv){
+    // Fungsi yang akan dijalankan ketika perintah "delete" dipanggil
+    const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8")); 
+    // Membaca file JSON berisi kontak dan mengonversinya menjadi array objek
+
+    const filteredContacts = contacts.filter(
+      (contact) => contact.name !== argv.name
+      // Memfilter kontak untuk menghapus kontak yang namanya sesuai dengan argumen
+      // Memastikan `contact` tidak null sebelum mengecek properti `name`
+    );
+
+    // Jika panjang array berubah, berarti kontak berhasil dihapus
+    fs.writeFileSync("data/contacts.json", JSON.stringify(filteredContacts, null, 2), "utf-8");
+    // Menulis ulang file JSON dengan data kontak yang sudah diperbarui
+    console.log(`Kontak dengan nama "${argv.name}" berhasil dihapus.`);
+}
+
 // Mengekspor fungsi dan objek yang diperlukan agar dapat digunakan di file lain
-module.exports = { newContact, question, rl, validator };
+module.exports = { newContact, deleteContact, question, rl, validator };
