@@ -1,1 +1,22 @@
-[]
+[
+  {
+    "name": "Rafli",
+    "phone": "081233243343",
+    "mail": "Rafli@mail.com"
+  },
+  {
+    "name": "Yusron",
+    "phone": "081233243343",
+    "mail": "Yusron@mail.com"
+  },
+  {
+    "name": "Hafidz Fazrin",
+    "phone": "081322422232",
+    "mail": "hafidz@mail.com"
+  },
+  {
+    "name": "Muhammad Harry Rizky",
+    "phone": "081322422232",
+    "mail": "harry@mail.com"
+  }
+]

@@ -1,58 +1,79 @@
-const readline = require('node:readline'); // Mengimpor modul readline untuk menerima input dari terminal
-const validator = require('validator');   // Mengimpor modul validator untuk memvalidasi data
-const fs = require('fs');                 // Mengimpor modul fs untuk bekerja dengan file
-dirFolder = "./data";
-dirFile = "/data/contacts.js";
+const readline = require('node:readline'); 
+const validator = require('validator'); 
+const fs = require('fs'); 
 
+const dirFolder = "./data"; // Directory for storing contact data
+const dirFile = "/data/contacts.json"; // File for saving contacts
 
-// Membuat antarmuka readline untuk membaca input dan menulis output dari/ke terminal
+// Create a readline interface for terminal I/O
 const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
+  input: process.stdin,
+  output: process.stdout,
 });
 
-// Fungsi untuk menanyakan pertanyaan ke pengguna, mengembalikan jawaban sebagai Promise
+// Helper function to ask a question in CLI and get user input
 const question = (questions) => {
-    return new Promise((resolve) => {
-        rl.question(questions, (input) => {
-            resolve(input); // Resolusi jawaban pengguna
-        });
+  return new Promise((resolve) => {
+    rl.question(questions, (input) => {
+      resolve(input); // Return user input
     });
+  });
 };
 
-// Fungsi untuk menyimpan kontak baru ke file JSON
+// Read all contacts from the JSON file
+function readContact() {
+  const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8")); 
+  return contacts;
+}
+
+// Save a new contact to the JSON file
 function newContact(contact) {
-    // Jika file contacts.json tidak ada, buat file baru dengan array kosong
-    if (!fs.existsSync("data/contacts.json")) {
-        fs.writeFileSync("data/contacts.json", "[]", "utf-8");
-    }
-
-    // Membaca isi file contacts.json
-    const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
-
-    // Menambahkan kontak baru ke dalam array
-    contacts.push(contact);
-
-    // Menyimpan kembali array kontak ke file dalam format JSON
-    fs.writeFileSync("data/contacts.json", JSON.stringify(contacts, null, 2), 'utf-8');
+  if (!fs.existsSync("data/contacts.json")) { // If file doesn't exist, create it
+    fs.writeFileSync("data/contacts.json", "[]", "utf-8");
+  }
+  const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
+  contacts.push(contact); // Add the new contact
+  fs.writeFileSync("data/contacts.json", JSON.stringify(contacts, null, 2), 'utf-8'); // Save updated contacts
 }
 
-function deleteContact(argv){
-    // Fungsi yang akan dijalankan ketika perintah "delete" dipanggil
-    const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8")); 
-    // Membaca file JSON berisi kontak dan mengonversinya menjadi array objek
-
-    const filteredContacts = contacts.filter(
-      (contact) => contact.name !== argv.name
-      // Memfilter kontak untuk menghapus kontak yang namanya sesuai dengan argumen
-      // Memastikan `contact` tidak null sebelum mengecek properti `name`
-    );
-
-    // Jika panjang array berubah, berarti kontak berhasil dihapus
-    fs.writeFileSync("data/contacts.json", JSON.stringify(filteredContacts, null, 2), "utf-8");
-    // Menulis ulang file JSON dengan data kontak yang sudah diperbarui
-    console.log(`Kontak dengan nama "${argv.name}" berhasil dihapus.`);
+// Delete a contact by name
+function deleteContact(argv) {
+  const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
+  const filteredContacts = contacts.filter(
+    (contact) => contact.name.toLowerCase() !== argv.name.toLowerCase()
+  );
+  fs.writeFileSync("data/contacts.json", JSON.stringify(filteredContacts, null, 2), "utf-8"); 
+  console.log(`Kontak dengan nama "${argv.name}" berhasil dihapus.`);
 }
 
-// Mengekspor fungsi dan objek yang diperlukan agar dapat digunakan di file lain
-module.exports = { newContact, deleteContact, question, rl, validator };
+// Display details of a specific contact
+function detailContact(argv) {
+  const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
+  const filteredContacts = contacts.filter(
+    (contact) => contact.name.toLowerCase() === argv.name.toLowerCase()
+  );
+  filteredContacts.forEach((filteredContact, index) => {
+    console.log(`|=============={${index + 1}}==============|`);
+    console.log(` Nama          : ${filteredContact.name}`);
+    console.log(` Nomor Telepon : ${filteredContact.phone}`);
+    console.log(` Email         : ${filteredContact.mail}`);
+    console.log(`|===============================|`);
+  });
+}
+
+// Update a contact's details
+const updateContact = async(argv, contact) => {
+  const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
+  const filteredContacts = contacts.filter(
+    (contact) => contact.name.toLowerCase() !== argv.name.toLowerCase()
+  );
+  if (filteredContacts.length === contacts.length) {
+    console.log("Data tidak ditemukan.");
+  } else {
+    filteredContacts.push(contact); // Add updated contact
+    fs.writeFileSync("data/contacts.json", JSON.stringify(filteredContacts, null, 2), 'utf-8');
+  }
+}
+
+// Export functions for use in other modules
+module.exports = { newContact, deleteContact, readContact, detailContact, updateContact, question, rl, validator };
