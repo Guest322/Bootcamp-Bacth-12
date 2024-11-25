@@ -34,7 +34,6 @@ yargs.command({
       mail: argv.mail, // Mengambil email dari argumen
     };
     func.newContact(contact); // Menyimpan kontak baru ke file JSON melalui modul func
-    console.log("Kontak berhasil ditambahkan:", contact); // Pesan konfirmasi
   },
 });
 
@@ -50,7 +49,7 @@ yargs.command({
     },
   },
   handler(argv) {
-    func.readContact(); // Membaca kontak dari file JSON (opsional jika diperlukan sebelum penghapusan)
+    //func.readContact(); // Membaca kontak dari file JSON (opsional jika diperlukan sebelum penghapusan)
     func.deleteContact(argv); // Menghapus kontak melalui modul func
   },
 });
@@ -63,7 +62,7 @@ yargs.command({
     const contacts = func.readContact(); // Membaca semua kontak dari file JSON
     contacts.forEach((contact, index) => {
       console.log(
-        `${index + 1}. Name: ${contact.name} | Phone Number: ${contact.phone} | Email: ${contact.mail}`
+        `${index + 1}. Name: ${contact.name} | Phone Number: ${contact.phone}`
       );
     }); // Menampilkan daftar kontak dengan format tertentu
   },
