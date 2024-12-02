@@ -1,23 +1,31 @@
 <!-- <%- include('layouts/header') %> -->
 <!-- <%- include('layouts/nav') %> -->
     <h1>Ini Adalah Page Contact</h1>
+    <div>
+    <a href="/dataAdd"><button>create data</button></a>
     <table>
         <thead>
             <tr>
-                <th>Name</th>
-                <th>Phone Number</th>
-                <th>Email</th>
+            <th>Name</th>
+            <th>Phone</th>
+            <th>Actions</th>
             </tr>
         </thead>
+        <% cont.forEach(contact => { %>
         <tbody>
-            <% cont.forEach(contact => { %>
-                <tr>
-                    <td><%= contact.name  %></td>
-                    <td><%= contact.phone %></td>
-                    <td><%= contact.mail %></td>
-                </tr>
-            <% }) %>
+            <tr>
+            <td><%= contact.name %></td>
+            <td><%= contact.phone %></td>
+            <td>
+                <form action="/delete/<%= contact.name %>" method="post" style="display:inline;">
+                <button type="submit">Delete</button>
+                </form>
+                <a href="/dataUpdate/<%= contact.name %>"><button>Update</button></a>
+            </td>
+            </tr>
         </tbody>
-    </table>
+        <% }) %>
+      </table>      
+    </div>
 <!-- <%- include('layouts/footer') %> -->
     

@@ -39,7 +39,7 @@ function newContact(argv) {
     const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
 
     // Memeriksa apakah nama yang dimasukkan sudah ada dalam daftar kontak
-    const existingContact = contacts.filter(contact => contact.name.toLowerCase() === argv.name.toLowerCase());
+    const existingContact = contacts.find(contact => contact.name.toLowerCase() === argv.name.toLowerCase());
 
     if (existingContact) {
         console.log(`Data dengan nama "${argv.name}" sudah tersedia.`);
