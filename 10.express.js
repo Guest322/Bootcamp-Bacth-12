@@ -1,6 +1,9 @@
 // Import modul Express, yang digunakan untuk membuat server
 const express = require("express");
 
+// Import modul express-ejs-layouts, yang digunakan untuk membuat layout page html
+var expressLayouts = require('express-ejs-layouts');
+
 // Import modul File System (fs) untuk membaca file JSON
 const fs = require('fs');
 
@@ -13,6 +16,12 @@ const port = 3000;
 // Mengatur view engine menjadi "ejs" untuk rendering template EJS
 app.set("view engine", "ejs");
 
+// Gunakan express-ejs-layouts untuk mendukung sistem layout
+app.use(expressLayouts);
+
+// Atur file layout default
+app.set("layout", "layouts/layout");
+
 // Rute untuk halaman utama
 app.get("/", (req, res) => {
     // res.sendFile(__dirname + '/views/index.html'); // Kode lama untuk mengirim file HTML statis
@@ -21,7 +30,7 @@ app.get("/", (req, res) => {
     const name = "Harry";
 
     // Render file "index.ejs" dan mengirim variabel `name` ke template
-    res.render("index", { name });
+    res.render("index", { name , title : "Home"});
 });
 
 // Rute untuk halaman kontak
@@ -50,7 +59,7 @@ app.get("/contact", (req, res) => {
     const cont = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
 
     // Render file "contact.ejs" dan mengirimkan data kontak (`cont`) ke template
-    res.render("contact", { cont });
+    res.render("contact", { cont, title : "Contact" });
 });
 
 // Rute untuk halaman "about"
@@ -58,7 +67,7 @@ app.get("/about", (req, res) => {
     // res.sendFile(__dirname + '/views/about.html'); // Kode lama untuk mengirim file HTML statis
 
     // Render file "about.ejs"
-    res.render("about");
+    res.render("about", { title : "About"});
 });
 
 // Middleware untuk menangani rute yang tidak ditemukan (404)
