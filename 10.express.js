@@ -15,6 +15,7 @@ const fs = require('fs');
 
 // Modul bawaan Node.js untuk mengakses variabel global (tidak digunakan di sini)
 const { title } = require("process");
+const { name } = require("ejs");
 
 // Inisialisasi aplikasi Express
 const app = express();
@@ -71,6 +72,17 @@ app.post("/addData", (req, res) => {
     const { name, phone, mail } = req.body; // Destruktur data dari form
     func.newContact(req.body); // Menyimpan data menggunakan fungsi custom
     res.redirect("contact"); // Redirect ke halaman kontak
+});
+
+app.get("/dataDetail/:name", (req,res) => {
+    const name = req.params.name; // Ambil parameter nama dari URL
+    const contacts = func.readContact(); // Membaca semua kontak
+    const contact = contacts.find(contact => contact.name.toLowerCase() === name.toLowerCase()); // Cari kontak berdasarkan nama
+
+    if (!contact) {
+        return res.status(404).send("Contact not found."); // Jika tidak ditemukan, kirim pesan 404
+    }
+    res.render("dataDetail", {contact, title: "Detail Data" });
 });
 
 // Rute untuk halaman update data

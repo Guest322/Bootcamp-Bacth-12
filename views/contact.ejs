@@ -1,5 +1,5 @@
-<!-- <%- include('layouts/header') %> -->
-<!-- <%- include('layouts/nav') %> -->
+<%- //include('layouts/header') %>
+<%- //include('layouts/nav') %> 
     <h1>Ini Adalah Page Contact</h1>
     <div>
     <a href="/dataAdd"><button>create data</button></a>
@@ -21,11 +21,12 @@
                 <button type="submit">Delete</button>
                 </form>
                 <a href="/dataUpdate/<%= contact.name %>"><button>Update</button></a>
+                <a href="/dataDetail/<%= contact.name %>"><button>Detail</button></a>
             </td>
             </tr>
         </tbody>
         <% }) %>
       </table>      
     </div>
-<!-- <%- include('layouts/footer') %> -->
+<%- //include('layouts/footer') %>
     
