@@ -3,7 +3,6 @@ const validator = require('validator');   // Mengimpor modul validator untuk mem
 const fs = require('fs');                 // Mengimpor modul fs untuk bekerja dengan file
 
 // Direktori folder dan file untuk penyimpanan data
-const dirFolder = "./data";
 const dirFile = "data/contacts.json";
 
 // Membuat antarmuka readline untuk membaca input dan menulis output dari/ke terminal
@@ -24,38 +23,39 @@ const question = (questions) => {
 // Fungsi untuk membaca kontak dari file JSON
 function readContact() {
     // Membaca file contacts.json dan mengonversi isinya menjadi array objek
-    const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
-    return contacts;
+    return JSON.parse(fs.readFileSync(dirFile, "utf-8"));
 }
 
 // Fungsi untuk menyimpan kontak baru ke file JSON
 function newContact(argv) {
     // Jika file contacts.json tidak ada, buat file baru dengan array kosong
-    if (!fs.existsSync("data/contacts.json")) {
-        fs.writeFileSync("data/contacts.json", "[]", "utf-8");
+    if (!fs.existsSync(dirFile)) {
+        fs.writeFileSync(dirFile, "[]", "utf-8");
     }
 
     // Membaca isi file contacts.json
-    const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
+    const contacts = readContact();
 
     // Memeriksa apakah nama yang dimasukkan sudah ada dalam daftar kontak
     const existingContact = contacts.find(contact => contact.name.toLowerCase() === argv.name.toLowerCase());
-
+    
     if (existingContact) {
         console.log(`Data dengan nama "${argv.name}" sudah tersedia.`);
+    }else if (!validator.isMobilePhone(argv.phone, 'id-ID')) {
+        console.log(`Nomor telepon yang anda masukan tidak valid`);
     } else {
         // Menambahkan kontak baru ke dalam array jika nama belum ada
         contacts.push(argv);
 
         // Menyimpan kembali array kontak ke file dalam format JSON
-        fs.writeFileSync("data/contacts.json", JSON.stringify(contacts, null, 2), 'utf-8');
+        fs.writeFileSync(dirFile, JSON.stringify(contacts, null, 2), 'utf-8');
         console.log(`Kontak dengan nama "${argv.name}" berhasil ditambahkan.`);
     }
 }
 
 // Fungsi untuk menghapus kontak berdasarkan nama
 function deleteContact(argv) {
-    const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
+    const contacts = JSON.parse(fs.readFileSync(dirFile, "utf-8"));
 
     // Memfilter kontak untuk menghapus yang sesuai dengan nama di argumen
     const filteredContacts = contacts.filter(
@@ -63,13 +63,13 @@ function deleteContact(argv) {
     );
 
     // Menulis ulang file JSON dengan data kontak yang diperbarui
-    fs.writeFileSync("data/contacts.json", JSON.stringify(filteredContacts, null, 2), "utf-8");
+    fs.writeFileSync(dirFile, JSON.stringify(filteredContacts, null, 2), "utf-8");
     console.log(`Kontak dengan nama "${argv.name}" berhasil dihapus.`);
 }
 
 // Fungsi untuk menampilkan detail kontak berdasarkan nama
 function detailContact(argv) {
-    const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
+    const contacts = JSON.parse(fs.readFileSync(dirFile, "utf-8"));
 
     // Memfilter kontak berdasarkan nama yang sesuai
     const filteredContacts = contacts.filter(
@@ -77,32 +77,45 @@ function detailContact(argv) {
     );
 
     // Menampilkan detail kontak
-    filteredContacts.forEach((filteredContact, index) => {
-        console.log(`|=============={${index + 1}}==============|`);
-        console.log(` Nama          : ${filteredContact.name}`);
-        console.log(` Nomor Telepon : ${filteredContact.phone}`);
-        console.log(` Email         : ${filteredContact.mail}`);
-        console.log(`|===============================|`);
-    });
+    // filteredContacts.forEach((filteredContact, index) => {
+    //     console.log(`|=============={${index + 1}}==============|`);
+    //     console.log(` Nama          : ${filteredContact.name}`);
+    //     console.log(` Nomor Telepon : ${filteredContact.phone}`);
+    //     console.log(` Email         : ${filteredContact.mail}`);
+    //     console.log(`|===============================|`);
+    // });
 }
 
 // Fungsi untuk mengupdate kontak berdasarkan nama
 const updateContact = async(argv,contact) => {
-    const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
+    const contacts = JSON.parse(fs.readFileSync(dirFile, "utf-8"));
 
+    // Memeriksa apakah nama yang dimasukkan sudah ada dalam daftar kontak
+    // const existingContact = contacts.find(
+    //     contacts => contacts.name.toLowerCase() === contact.name.toLowerCase()
+    // );
+    
     // Memfilter kontak yang tidak sesuai dengan nama yang ingin diupdate
     const filteredContacts = contacts.filter(
         (contact) => contact.name.toLowerCase() !== argv.name.toLowerCase()
     );
 
+    // if (existingContact) {
+    //     console.log(`Data dengan nama "${contact.name}" sudah tersedia.`);
+    //     return false;
+    // }else 
     if (filteredContacts.length === contacts.length) {
         console.log("Data tidak ditemukan.");
-    } else {
+    }
+    // else if (!validator.isMobilePhone(contact.phone, 'id-ID')) {
+    //     console.log(`Nomor telepon yang anda masukan tidak valid`);
+    // }
+    else {
         // Menambahkan kontak baru ke dalam array
         filteredContacts.push(contact);
 
         // Menyimpan kembali array kontak ke file dalam format JSON
-        fs.writeFileSync("data/contacts.json", JSON.stringify(filteredContacts, null, 2), 'utf-8');
+        fs.writeFileSync(dirFile, JSON.stringify(filteredContacts, null, 2), 'utf-8');
     }
 }
 

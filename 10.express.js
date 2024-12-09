@@ -1,42 +1,19 @@
-// Import modul Express, yang digunakan untuk membuat server
-const express = require("express");
+const express = require("express");// Import modul Express, yang digunakan untuk membuat server
+const app = express();// Inisialisasi aplikasi Express
+const expressLayouts = require('express-ejs-layouts');// Import modul express-ejs-layouts, yang digunakan untuk mendukung sistem layout pada template EJS
+const morgan = require("morgan");// Import modul Morgan, yang digunakan untuk logging request ke server
+const { body, validationResult } = require('express-validator');
+const fs = require('fs');// Import modul File System (fs) untuk membaca dan menulis file JSON
+const func = require("./src/func");// Import fungsi-fungsi custom dari file func.js
 
-// Import modul express-ejs-layouts, yang digunakan untuk mendukung sistem layout pada template EJS
-const expressLayouts = require('express-ejs-layouts');
+const port = 3000;// Tentukan port untuk server berjalan
 
-// Import modul Morgan, yang digunakan untuk logging request ke server
-const morgan = require("morgan");
+app.set("view engine", "ejs");// Atur view engine menjadi EJS untuk merender halaman HTML
+app.set("layout", "layouts/layout");// Atur file layout default
 
-// Import fungsi-fungsi custom dari file func.js
-const func = require("./src/func");
-
-// Import modul File System (fs) untuk membaca dan menulis file JSON
-const fs = require('fs');
-
-// Modul bawaan Node.js untuk mengakses variabel global (tidak digunakan di sini)
-const { title } = require("process");
-const { name } = require("ejs");
-
-// Inisialisasi aplikasi Express
-const app = express();
-
-// Tentukan port untuk server berjalan
-const port = 3000;
-
-// Middleware Morgan untuk mencatat setiap request yang masuk
-app.use(morgan("dev"));
-
-// Atur view engine menjadi EJS untuk merender halaman HTML
-app.set("view engine", "ejs");
-
-// Gunakan express-ejs-layouts untuk mendukung penggunaan layout EJS
-app.use(expressLayouts);
-
-// Atur file layout default
-app.set("layout", "layouts/layout");
-
-// Middleware untuk mengatur folder public sebagai tempat penyimpanan file statis
-app.use(express.static("public"));
+app.use(morgan("dev"));// Middleware Morgan untuk mencatat setiap request yang masuk
+app.use(expressLayouts);// Gunakan express-ejs-layouts untuk mendukung penggunaan layout EJS
+app.use(express.static("public"));// Middleware untuk mengatur folder public sebagai tempat penyimpanan file statis
 
 // Middleware untuk mencatat waktu request masuk
 app.use((req, res, next) => {
@@ -46,6 +23,31 @@ app.use((req, res, next) => {
 
 // Middleware untuk parsing data form (urlencoded)
 app.use(express.urlencoded({ extended: true }));
+
+//Variabel untuk mencari dan menemukan apakah nama merupakan duplikasi atau bukan
+const isNameDuplicate = (newName, { req }) => {
+    // Membaca file JSON berisi data kontak
+    const contacts = JSON.parse(fs.readFileSync("data/contacts.json", "utf-8"));
+    
+    // Mendapatkan nama lama dari parameter rute (route parameter)
+    const oldName = req.params.name.toLowerCase();
+
+    // Memeriksa apakah nama baru sudah ada dalam kontak
+    // tetapi bukan nama lama (untuk menghindari kesalahan deteksi saat nama tidak diubah)
+    const duplicate = contacts.find(
+        (contact) => 
+            contact.name.toLowerCase() === newName.toLowerCase() && // Nama baru cocok
+            contact.name.toLowerCase() !== oldName                 // Tapi bukan nama lama
+    );
+
+    // Jika nama duplikat ditemukan, lempar error
+    if (duplicate) {
+        throw new Error(`Kontak dengan nama "${newName}" sudah ada.`);
+    }
+
+    // Jika tidak ada duplikat, kembalikan nilai true untuk melanjutkan proses
+    return true;
+};
 
 // Rute untuk halaman utama
 app.get("/", (req, res) => {
@@ -64,16 +66,52 @@ app.get("/contact", (req, res) => {
 
 // Rute untuk halaman tambah data
 app.get("/dataAdd", (req, res) => {
-    res.render("dataAdd", { title: "Tambah Data" }); // Render halaman tambah data
+    res.render("dataAdd", { title: "Tambah Data" , errors : []}); // Render halaman tambah data
 });
 
 // Rute untuk menyimpan data baru
-app.post("/addData", (req, res) => {
-    const { name, phone, mail } = req.body; // Destruktur data dari form
-    func.newContact(req.body); // Menyimpan data menggunakan fungsi custom
-    res.redirect("contact"); // Redirect ke halaman kontak
-});
+// app.post("/addData", (req, res) => {
+//     const { name, phone, mail } = req.body; // Destruktur data dari form
+//     func.newContact(req.body); // Menyimpan data menggunakan fungsi custom
+//     res.redirect("contact"); // Redirect ke halaman kontak
+// });
 
+// Rute untuk menyimpan data baru dengan validasi
+app.post(
+    "/addData", // Rute untuk menambahkan data kontak baru
+    [
+        // Validasi untuk field 'name'
+        body('name')
+            .trim() // Menghapus spasi di awal dan akhir input
+            .notEmpty().withMessage('Nama harus diisi.') // Memastikan input nama tidak kosong
+            .isLength({ min: 1 }).withMessage('Nama tidak bisa diisi hanya dengan spasi.'), // Memastikan input nama valid dan bukan hanya spasi
+
+        // Validasi untuk field 'phone'
+        body('phone')
+            .isMobilePhone('id-ID') // Memeriksa apakah input adalah nomor telepon yang valid di Indonesia
+            .withMessage('Format nomor telepon yang anda isi tidak valid.') // Pesan kesalahan jika format tidak sesuai
+    ],
+    (req, res) => {
+        // Mengecek hasil validasi
+        const errors = validationResult(req);
+
+        // Jika ada kesalahan validasi, render ulang halaman dengan pesan kesalahan
+        if (!errors.isEmpty()) {
+            return res.status(400).render("dataAdd", {
+                title: "Tambah Data", // Judul halaman untuk menambahkan data
+                errors: errors.array(), // Menampilkan daftar kesalahan validasi
+            });
+        }
+
+        // Jika validasi berhasil, tambahkan data kontak baru
+        func.newContact(req.body); // Memanggil fungsi untuk menyimpan data baru
+
+        // Mengarahkan pengguna ke halaman daftar kontak setelah data berhasil ditambahkan
+        res.redirect("/contact");
+    }
+);
+
+//Rute untuk menampilkan detail data pada page baru
 app.get("/dataDetail/:name", (req,res) => {
     const name = req.params.name; // Ambil parameter nama dari URL
     const contacts = func.readContact(); // Membaca semua kontak
@@ -95,20 +133,65 @@ app.get("/dataUpdate/:name", (req, res) => {
         return res.status(404).send("Contact not found."); // Jika tidak ditemukan, kirim pesan 404
     }
 
-    res.render("dataUpdate", { contact, title: "Update Contact" }); // Render halaman update dengan data kontak
+    res.render("dataUpdate", { contact, title: "Update Contact", errors: [] }); // Render halaman update dengan data kontak
 });
 
 // Rute untuk menyimpan perubahan data
-app.post("/dataUpdate/:name", (req, res) => {
-    const oldName = req.params.name; // Nama lama (sebelum diupdate)
-    const { name, phone, mail } = req.body; // Data baru dari form
-    func.updateContact({ name: oldName }, { name, phone, mail }); // Update data menggunakan fungsi custom
-    res.redirect("/contact"); // Redirect ke halaman kontak
-});
+// app.post("/updateData/:name", (req, res) => {
+//     const oldName = req.params.name; // Nama lama (sebelum diupdate)
+//     const { name, phone, mail } = req.body; // Data baru dari form
+//     func.updateContact({ name: oldName }, { name, phone, mail }); // Update data menggunakan fungsi custom
+//     res.redirect("/contact"); // Redirect ke halaman kontak
+// });
+
+// Rute untuk menyimpan perubahan data dengan validasi
+app.post(
+    "/updateData/:name", // Rute untuk memperbarui data kontak berdasarkan nama lama
+    [
+        // Validasi untuk field 'name'
+        body('name')
+            .trim() // Menghapus spasi di awal dan akhir input
+            .notEmpty().withMessage('Nama wajib diisi.') // Memastikan input tidak kosong
+            .isLength({ min: 1 }).withMessage('Nama tidak boleh hanya terdiri dari spasi.') // Memastikan input lebih dari satu karakter
+            .custom(isNameDuplicate), // Validasi tambahan untuk memeriksa duplikasi nama
+
+        // Validasi untuk field 'phone'
+        body('phone')
+            .isMobilePhone('id-ID') // Memeriksa apakah input adalah nomor telepon valid di Indonesia
+            .withMessage('Format nomor telepon tidak valid.') // Pesan kesalahan jika format salah
+    ],
+    (req, res) => {
+        // Mengambil hasil validasi
+        const errors = validationResult(req);
+
+        // Jika ada kesalahan validasi, render ulang form dengan pesan kesalahan
+        if (!errors.isEmpty()) {
+            return res.status(400).render("dataUpdate", {
+                title: "Update Kontak", // Judul halaman
+                errors: errors.array(), // Daftar kesalahan validasi
+                contact: {
+                    name: req.body.name,  // Mengembalikan input nama yang diisi sebelumnya
+                    phone: req.body.phone, // Mengembalikan input telepon yang diisi sebelumnya
+                    mail: req.body.mail, // Mengembalikan input email yang diisi sebelumnya
+                }, // Mengembalikan data input sebelumnya agar pengguna tidak perlu mengetik ulang
+            });
+        }
+
+        // Mendapatkan nama lama dari parameter URL
+        const oldName = req.params.name;
+
+        // Memperbarui kontak dengan data baru yang dikirimkan pengguna
+        func.updateContact({ name: oldName }, req.body);
+
+        // Mengalihkan ke halaman daftar kontak setelah berhasil memperbarui data
+        res.redirect("/contact");
+    }
+);
+
 
 // Rute untuk menghapus data kontak
 app.post("/delete/:name", (req, res) => {
-    const name = req.params.name; // Ambil nama dari parameter URL
+    const name = req.body.name; // Ambil nama dari parameter URL
     func.deleteContact({ name }); // Hapus kontak menggunakan fungsi custom
     res.redirect("/contact"); // Redirect ke halaman kontak
 });

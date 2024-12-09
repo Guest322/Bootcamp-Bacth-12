@@ -1,5 +1,12 @@
 <div class="form-container">
     <h2>Contact Form</h2>
+    <% if (errors) { %>
+        <ul>
+            <% errors.forEach(error => { %>
+                <li style="color: red;"><%= error.msg %></li>
+            <% }); %>
+        </ul>
+    <% } %>
     <form action="/addData" method="post">
         <div class="form-group">
             <label for="name">Name</label>
@@ -16,5 +23,5 @@
         <div class="form-group">
             <button type="submit">Submit</button>
         </div>
-    </form>    
+    </form>
 </div>

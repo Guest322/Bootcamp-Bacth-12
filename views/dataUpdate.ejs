@@ -1,6 +1,13 @@
 <div class="form-container">
     <h2>Update Contact</h2>
-    <form action="/dataUpdate/<%= contact.name %>" method="post">
+    <form action="/updateData/<%= contact.name %>" method="post">
+        <% if (errors && errors.length > 0) { %>
+            <ul class="error-list">
+                <% errors.forEach(error => { %>
+                    <li style="color: red;"><%= error.msg %></li>
+                <% }); %>
+            </ul>
+        <% } %>
         <div class="form-group">
             <label for="name">Name</label>
             <input type="text" id="name" name="name" value="<%= contact.name %>" required>
@@ -16,5 +23,5 @@
         <div class="form-group">
             <button type="submit">Update</button>
         </div>
-    </form>    
+    </form>
 </div>
