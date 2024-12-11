@@ -1,123 +1,123 @@
-const readline = require('node:readline'); // Mengimpor modul readline untuk menerima input dari terminal
-const validator = require('validator');   // Mengimpor modul validator untuk memvalidasi data
-const fs = require('fs');                 // Mengimpor modul fs untuk bekerja dengan file
+// Import koneksi ke database PostgreSQL
+const pool = require("./conn/dbPostgres");
 
-// Direktori folder dan file untuk penyimpanan data
-const dirFile = "data/contacts.json";
-
-// Membuat antarmuka readline untuk membaca input dan menulis output dari/ke terminal
-const rl = readline.createInterface({
-    input: process.stdin,
-    output: process.stdout,
-});
-
-// Fungsi untuk menanyakan pertanyaan ke pengguna, mengembalikan jawaban sebagai Promise
-const question = (questions) => {
-    return new Promise((resolve) => {
-        rl.question(questions, (input) => {
-            resolve(input); // Resolusi jawaban pengguna
-        });
-    });
-};
-
-// Fungsi untuk membaca kontak dari file JSON
-function readContact() {
-    // Membaca file contacts.json dan mengonversi isinya menjadi array objek
-    return JSON.parse(fs.readFileSync(dirFile, "utf-8"));
+// Fungsi untuk mengambil semua kontak
+async function readContact() {
+    // Menjalankan query SQL untuk mengambil semua data dari tabel 'data_contact'
+    const result = await pool.query('SELECT * FROM data_contact');
+    return result.rows; // Mengembalikan hasil query (baris data kontak)
 }
 
-// Fungsi untuk menyimpan kontak baru ke file JSON
-function newContact(argv) {
-    // Jika file contacts.json tidak ada, buat file baru dengan array kosong
-    if (!fs.existsSync(dirFile)) {
-        fs.writeFileSync(dirFile, "[]", "utf-8");
+// Fungsi untuk menambahkan kontak baru
+async function newContact(contact) {
+    try {
+        const { name, phone, mail } = contact; // Mengambil nilai name, phone, dan mail dari objek contact
+        // Menjalankan query untuk menambahkan data kontak baru ke dalam tabel 'data_contact'
+        const result = await pool.query(
+            'INSERT INTO data_contact (name, phone, mail) VALUES ($1, $2, $3) RETURNING *',
+            [name, phone, mail] // Menyisipkan nilai ke dalam query
+        );
+        console.log(`Contact added: ${JSON.stringify(result.rows[0])}`); // Menampilkan kontak yang baru ditambahkan di log
+    } catch (err) {
+        console.error(err.message); // Menangani dan mencetak error jika ada kesalahan dalam query
     }
+}
 
-    // Membaca isi file contacts.json
-    const contacts = readContact();
-
-    // Memeriksa apakah nama yang dimasukkan sudah ada dalam daftar kontak
-    const existingContact = contacts.find(contact => contact.name.toLowerCase() === argv.name.toLowerCase());
-    
-    if (existingContact) {
-        console.log(`Data dengan nama "${argv.name}" sudah tersedia.`);
-    }else if (!validator.isMobilePhone(argv.phone, 'id-ID')) {
-        console.log(`Nomor telepon yang anda masukan tidak valid`);
-    } else {
-        // Menambahkan kontak baru ke dalam array jika nama belum ada
-        contacts.push(argv);
-
-        // Menyimpan kembali array kontak ke file dalam format JSON
-        fs.writeFileSync(dirFile, JSON.stringify(contacts, null, 2), 'utf-8');
-        console.log(`Kontak dengan nama "${argv.name}" berhasil ditambahkan.`);
+// Fungsi untuk mengambil detail kontak berdasarkan nama
+async function detailContact(name) {
+    try {
+        // Menjalankan query untuk mengambil data kontak yang memiliki nama yang sesuai (case-insensitive)
+        const result = await pool.query(
+            'SELECT * FROM data_contact WHERE LOWER(name) = LOWER($1)',
+            [name]
+        );
+        return result.rows; // Mengembalikan hasil query, meskipun tidak ada hasil ditemukan (akan mengembalikan array kosong)
+    } catch (err) {
+        console.error(err.message); // Menangani error jika query gagal
+        throw err; // Melempar kembali error untuk ditangani di fungsi pemanggil
     }
 }
 
 // Fungsi untuk menghapus kontak berdasarkan nama
-function deleteContact(argv) {
-    const contacts = JSON.parse(fs.readFileSync(dirFile, "utf-8"));
-
-    // Memfilter kontak untuk menghapus yang sesuai dengan nama di argumen
-    const filteredContacts = contacts.filter(
-        (contact) => contact.name.toLowerCase() !== argv.name.toLowerCase()
-    );
-
-    // Menulis ulang file JSON dengan data kontak yang diperbarui
-    fs.writeFileSync(dirFile, JSON.stringify(filteredContacts, null, 2), "utf-8");
-    console.log(`Kontak dengan nama "${argv.name}" berhasil dihapus.`);
-}
-
-// Fungsi untuk menampilkan detail kontak berdasarkan nama
-function detailContact(argv) {
-    const contacts = JSON.parse(fs.readFileSync(dirFile, "utf-8"));
-
-    // Memfilter kontak berdasarkan nama yang sesuai
-    const filteredContacts = contacts.filter(
-        (contact) => contact.name.toLowerCase() === argv.name.toLowerCase()
-    );
-
-    // Menampilkan detail kontak
-    // filteredContacts.forEach((filteredContact, index) => {
-    //     console.log(`|=============={${index + 1}}==============|`);
-    //     console.log(` Nama          : ${filteredContact.name}`);
-    //     console.log(` Nomor Telepon : ${filteredContact.phone}`);
-    //     console.log(` Email         : ${filteredContact.mail}`);
-    //     console.log(`|===============================|`);
-    // });
-}
-
-// Fungsi untuk mengupdate kontak berdasarkan nama
-const updateContact = async(argv,contact) => {
-    const contacts = JSON.parse(fs.readFileSync(dirFile, "utf-8"));
-
-    // Memeriksa apakah nama yang dimasukkan sudah ada dalam daftar kontak
-    // const existingContact = contacts.find(
-    //     contacts => contacts.name.toLowerCase() === contact.name.toLowerCase()
-    // );
-    
-    // Memfilter kontak yang tidak sesuai dengan nama yang ingin diupdate
-    const filteredContacts = contacts.filter(
-        (contact) => contact.name.toLowerCase() !== argv.name.toLowerCase()
-    );
-
-    // if (existingContact) {
-    //     console.log(`Data dengan nama "${contact.name}" sudah tersedia.`);
-    //     return false;
-    // }else 
-    if (filteredContacts.length === contacts.length) {
-        console.log("Data tidak ditemukan.");
-    }
-    // else if (!validator.isMobilePhone(contact.phone, 'id-ID')) {
-    //     console.log(`Nomor telepon yang anda masukan tidak valid`);
-    // }
-    else {
-        // Menambahkan kontak baru ke dalam array
-        filteredContacts.push(contact);
-
-        // Menyimpan kembali array kontak ke file dalam format JSON
-        fs.writeFileSync(dirFile, JSON.stringify(filteredContacts, null, 2), 'utf-8');
+async function deleteContact(name) {
+    try {
+        // Menjalankan query untuk menghapus data kontak berdasarkan nama yang sesuai (case-insensitive)
+        const result = await pool.query(
+            'DELETE FROM data_contact WHERE LOWER(name) = LOWER($1) RETURNING *',
+            [name]
+        );
+        if (result.rowCount > 0) {
+            // Jika ada kontak yang terhapus, tampilkan di log
+            console.log(`Contact deleted: ${JSON.stringify(result.rows[0])}`);
+        } else {
+            // Jika tidak ada kontak yang ditemukan dengan nama tersebut
+            console.log(`No contact found with name: ${name}`);
+        }
+    } catch (err) {
+        console.error(err.message); // Menangani error jika query gagal
     }
 }
 
-// Mengekspor fungsi-fungsi untuk digunakan di file lain
-module.exports = { newContact, deleteContact, readContact, detailContact, updateContact, question, rl, validator };
+// Fungsi untuk mengambil detail kontak berdasarkan nama
+async function detailContact(name) {
+    try {
+        // Menjalankan query untuk mengambil data kontak berdasarkan nama (case-insensitive)
+        const result = await pool.query(
+            'SELECT * FROM data_contact WHERE LOWER(name) = LOWER($1)',
+            [name]
+        );
+        return result.rows[0]; // Mengembalikan baris pertama jika ada hasil
+    } catch (err) {
+        console.error(err.message); // Menangani error jika query gagal
+    }
+}
+
+// Fungsi untuk mengupdate data kontak
+async function updateContact(oldName, newContact) {
+    try {
+        const { name, phone, mail } = newContact; // Mengambil nilai baru untuk nama, telepon, dan email
+        // Menjalankan query untuk memperbarui data kontak berdasarkan nama lama
+        const result = await pool.query(
+            'UPDATE data_contact SET name = $1, phone = $2, mail = $3 WHERE LOWER(name) = LOWER($4) RETURNING *',
+            [name, phone, mail, oldName] // Menyisipkan nilai baru dan nama lama
+        );
+        if (result.rowCount > 0) {
+            // Jika ada kontak yang berhasil diperbarui, tampilkan di log
+            console.log(`Contact updated: ${JSON.stringify(result.rows[0])}`);
+        } else {
+            // Jika tidak ada kontak yang ditemukan untuk nama yang diberikan
+            console.log(`No contact found with name: ${oldName}`);
+        }
+    } catch (err) {
+        console.error(err.message); // Menangani error jika query gagal
+    }
+}
+
+// Fungsi untuk memeriksa duplikasi nama kontak
+async function dataDuplicate(newName, { req }) {
+    try {
+        // Mendapatkan nama lama dari parameter rute (route parameter)
+        const oldName = req.params.name.toLowerCase();
+
+        // Query untuk memeriksa apakah ada nama baru yang duplikat (tetapi bukan nama lama)
+        const result = await pool.query(
+            'SELECT * FROM data_contact WHERE LOWER(name) = LOWER($1) AND LOWER(name) != LOWER($2)',
+            [newName, oldName]
+        );
+
+        // Jika ada duplikat, hasil query akan mengembalikan baris
+        if (result.rows.length > 0) {
+            throw new Error(`Kontak dengan nama "${newName}" sudah ada.`);
+        }
+
+        // Jika tidak ada duplikat, kembalikan nilai true untuk melanjutkan proses
+        return true;
+
+    } catch (err) {
+        console.error(err.message); // Menangani dan mencetak error jika terjadi masalah
+        throw err;  // Melempar error agar bisa ditangani lebih lanjut
+    }
+};
+
+// Mengekspor semua fungsi agar dapat digunakan di file lain
+module.exports = { newContact, detailContact, deleteContact, readContact, detailContact, updateContact, dataDuplicate};

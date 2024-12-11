@@ -158,7 +158,7 @@ app.post(
         // Validasi untuk field 'phone'
         body('phone')
             .isMobilePhone('id-ID') // Memeriksa apakah input adalah nomor telepon valid di Indonesia
-            .withMessage('Format nomor telepon tidak valid.') // Pesan kesalahan jika format salah
+            .withMessage('Format nomor telepon tidak valid.'), // Pesan kesalahan jika format salah
     ],
     (req, res) => {
         // Mengambil hasil validasi
